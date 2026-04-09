@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorteo Presentación el Trampot</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant+Garamond:wght@300;400;600&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --oro: #C9A84C;
+    --oro-claro: #E8C97A;
+    --oro-oscuro: #8B6914;
+    --rojo: #8B1A1A;
+    --rojo-suave: #B22222;
+    --crema: #F5EDD6;
+    --crema-oscura: #E8D9B5;
+    --marfil: #FAF7F0;
+    --oscuro: #1A0A0A;
+    --gris-medio: #6B5E4E;
+    --grad-bg: radial-gradient(ellipse at 20% 50%, #2D0A0A 0%, #1A0505 40%, #0D0000 100%);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Cormorant Garamond', serif;
+    background: var(--grad-bg);
+    color: var(--crema);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C9A84C' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+  .app { position: relative; z-index: 1; }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    padding: 40px 20px 30px;
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+  }
+  .header::after { content: '❧ ✦ ❧'; display: block; font-size: 1.2rem; color: var(--oro); margin-top: 12px; letter-spacing: 12px; }
+  .header-crown { font-size: 2.5rem; margin-bottom: 8px; filter: drop-shadow(0 0 12px rgba(201,168,76,0.6)); }
+  .header h1 { font-family: 'Cinzel', serif; font-size: clamp(1.6rem, 4vw, 2.8rem); color: var(--oro-claro); letter-spacing: 4px; text-shadow: 0 0 30px rgba(201,168,76,0.4); }
+  .header h2 { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(0.9rem, 2vw, 1.2rem); color: var(--crema-oscura); font-weight: 300; margin-top: 4px; letter-spacing: 2px; }
+
+  /* NAV */
+  .nav { display: flex; justify-content: center; gap: 0; padding: 0 20px; border-bottom: 1px solid rgba(201,168,76,0.2); flex-wrap: wrap; }
+  .nav-btn { font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 2px; padding: 16px 22px; background: transparent; color: var(--gris-medio); border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.3s; text-transform: uppercase; }
+  .nav-btn:hover { color: var(--oro-claro); }
+  .nav-btn.active { color: var(--oro-claro); border-bottom-color: var(--oro); }
+
+  /* CONTENT */
+  .tab-content { display: none; padding: 30px 20px; max-width: 1200px; margin: 0 auto; }
+  .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* CARDS */
+  .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2); border-radius: 2px; padding: 28px; margin-bottom: 20px; backdrop-filter: blur(4px); }
+  .card-title { font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 3px; color: var(--oro); text-transform: uppercase; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(201,168,76,0.2); display: flex; align-items: center; gap: 10px; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-group label { font-size: 0.75rem; letter-spacing: 2px; color: var(--oro); text-transform: uppercase; font-family: 'Cinzel', serif; }
+  .form-group input, .form-group select { background: rgba(255,255,255,0.06); border: 1px solid rgba(201,168,76,0.3); border-radius: 2px; padding: 10px 14px; color: var(--crema); font-family: 'Cormorant Garamond', serif; font-size: 1rem; transition: border-color 0.3s; outline: none; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--oro); }
+  .form-group select option { background: #2D0A0A; }
+
+  /* BUTTONS */
+  .btn { font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 2px; padding: 12px 28px; border: 1px solid var(--oro); background: transparent; color: var(--oro-claro); cursor: pointer; text-transform: uppercase; transition: all 0.3s; border-radius: 2px; }
+  .btn:hover { background: rgba(201,168,76,0.15); box-shadow: 0 0 20px rgba(201,168,76,0.2); }
+  .btn-primary { background: var(--oro); color: var(--oscuro); font-weight: 700; }
+  .btn-primary:hover { background: var(--oro-claro); box-shadow: 0 0 25px rgba(201,168,76,0.4); }
+  .btn-danger { border-color: var(--rojo-suave); color: #E88888; }
+  .btn-danger:hover { background: rgba(139,26,26,0.3); }
+  .btn-import { border-color: #4A90C4; color: #7FC4F5; }
+  .btn-import:hover { background: rgba(26,90,139,0.3); }
+  .btn-sm { padding: 8px 16px; font-size: 0.65rem; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .stat-box { background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); padding: 16px; text-align: center; border-radius: 2px; }
+  .stat-num { font-family: 'Cinzel', serif; font-size: 2rem; color: var(--oro-claro); display: block; }
+  .stat-label { font-size: 0.7rem; letter-spacing: 1.5px; color: var(--gris-medio); text-transform: uppercase; }
+
+  /* MSG */
+  .msg { padding: 12px 18px; border-radius: 2px; font-size: 0.9rem; margin-bottom: 16px; display: none; }
+  .msg.show { display: block; animation: fadeIn 0.3s; }
+  .msg-ok { background: rgba(61,139,90,0.2); border: 1px solid rgba(61,139,90,0.4); color: #8FD9A8; }
+  .msg-err { background: rgba(139,26,26,0.2); border: 1px solid rgba(139,26,26,0.4); color: #E88888; }
+  .msg-info { background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); color: var(--oro-claro); }
+
+  /* TEATRO */
+  .teatro-wrap { overflow-x: auto; padding: 20px 0; }
+  .escenario {
+    background: linear-gradient(135deg, rgba(139,26,26,0.5), rgba(90,10,10,0.5));
+    border: 2px solid rgba(201,168,76,0.5);
+    border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+    text-align: center; padding: 18px; margin: 0 auto 28px; max-width: 420px;
+    font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 3px; color: var(--oro);
+    text-transform: uppercase;
+    box-shadow: 0 0 30px rgba(139,26,26,0.3), inset 0 1px 0 rgba(201,168,76,0.3);
+  }
+  .fila-container { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 5px; }
+  .fila-label { font-family: 'Cinzel', serif; font-size: 0.6rem; color: var(--oro-oscuro); width: 38px; text-align: right; flex-shrink: 0; letter-spacing: 1px; }
+  .fila-asientos { display: flex; gap: 3px; flex-wrap: nowrap; align-items: flex-end; }
+
+  /* Par de butacas */
+  .par-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .par-butacas { display: flex; gap: 1px; }
+  /* Asiento con número individual */
+  .asiento-wrap { display: flex; flex-direction: column; align-items: center; }
+  .seat-num { font-family: 'Cinzel', serif; font-size: 0.42rem; color: var(--oro-oscuro); line-height: 1; margin-bottom: 2px; letter-spacing: 0; }
+
+  /* Butaca individual */
+  .asiento {
+    width: 20px; height: 20px;
+    border-radius: 3px 3px 0 0;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .asiento.libre { background: rgba(61,139,90,0.25); border-color: rgba(61,139,90,0.5); }
+  .asiento.ocupado { background: rgba(139,26,26,0.4); border-color: rgba(139,26,26,0.6); }
+  .asiento.importado { background: rgba(26,90,139,0.45); border-color: rgba(74,144,196,0.7); }
+  .asiento.highlight {
+    background: rgba(201,168,76,0.75) !important;
+    border-color: var(--oro) !important;
+    box-shadow: 0 0 8px rgba(201,168,76,0.9);
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 8px rgba(201,168,76,0.7)} 50%{box-shadow:0 0 16px rgba(201,168,76,1)} }
+  .asiento:hover:not(.highlight) { transform: scaleY(1.2); filter: brightness(1.4); }
+
+  .pasillo { width: 14px; flex-shrink: 0; }
+  .par-gap { width: 3px; flex-shrink: 0; }
+
+  /* Gradería */
+  .zona-grada { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; padding: 14px; border-top: 2px dashed rgba(201,168,76,0.2); }
+  .grada-item { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; transition: all 0.2s; }
+  .grada-item.libre { background: rgba(61,139,90,0.3); border: 1px solid rgba(61,139,90,0.6); }
+  .grada-item.ocupado { background: rgba(139,26,26,0.4); border: 1px solid rgba(139,26,26,0.6); }
+  .grada-item.importado { background: rgba(26,90,139,0.45); border: 1px solid rgba(74,144,196,0.7); }
+  .grada-item.highlight { background: rgba(201,168,76,0.6) !important; border-color: var(--oro) !important; animation: pulse 1s infinite; }
+
+  /* Leyenda */
+  .leyenda { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px; }
+  .leyenda-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--gris-medio); }
+  .leyenda-dot { width: 14px; height: 14px; border-radius: 2px; }
+
+  /* Tooltip */
+  .tooltip { position: fixed; background: rgba(26,10,10,0.95); border: 1px solid rgba(201,168,76,0.4); border-radius: 4px; padding: 8px 12px; font-size: 0.8rem; color: var(--crema); pointer-events: none; z-index: 1000; max-width: 260px; display: none; backdrop-filter: blur(8px); }
+  .tooltip.show { display: block; }
+  .tooltip strong { color: var(--oro); display: block; margin-bottom: 2px; font-family: 'Cinzel', serif; font-size: 0.7rem; }
+
+  /* Plano controls */
+  .plano-controls { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
+  .plano-controls .form-group { min-width: 160px; }
+  .search-inline { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
+  .search-inline label { font-size: 0.75rem; letter-spacing: 2px; color: var(--oro); text-transform: uppercase; font-family: 'Cinzel', serif; }
+  .search-inline-row { display: flex; gap: 8px; }
+  .search-inline-row input {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 2px;
+    padding: 10px 14px;
+    color: var(--crema);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .search-inline-row input:focus { border-color: var(--oro); }
+  .search-inline-row input::placeholder { color: var(--gris-medio); }
+
+  /* Barra resultado búsqueda */
+  .search-result-bar {
+    background: rgba(201,168,76,0.07);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 2px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    display: none;
+    margin-bottom: 12px;
+    animation: fadeIn 0.3s;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .search-result-bar.show { display: flex; }
+  .search-result-bar .persona-nombre-inline { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--oro-claro); }
+  .search-result-bar .tag { display: inline-block; background: rgba(201,168,76,0.18); border: 1px solid rgba(201,168,76,0.4); border-radius: 2px; padding: 2px 10px; font-size: 0.78rem; color: var(--oro-claro); font-family: 'Cinzel', serif; letter-spacing: 1px; }
+
+  /* Lista resultado */
+  .result-list { max-height: 460px; overflow-y: auto; border: 1px solid rgba(201,168,76,0.15); border-radius: 2px; }
+  .result-list::-webkit-scrollbar { width: 4px; }
+  .result-list::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); }
+  .result-row { display: grid; grid-template-columns: 30px 1fr 1fr; gap: 12px; padding: 10px 16px; border-bottom: 1px solid rgba(201,168,76,0.07); font-size: 0.9rem; transition: background 0.2s; align-items: center; }
+  .result-row:hover { background: rgba(201,168,76,0.05); }
+  .result-num { color: var(--oro-oscuro); font-family: 'Cinzel', serif; font-size: 0.7rem; }
+  .result-persona { color: var(--crema); }
+  .result-asiento { color: var(--oro-claro); font-size: 0.85rem; }
+
+  /* ENTRADAS */
+  .entradas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 4px; }
+  .entrada {
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 3px;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    position: relative;
+  }
+  .entrada::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--oro); }
+  .entrada-lado {
+    background: rgba(201,168,76,0.08);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 54px;
+    border-right: 1px solid rgba(201,168,76,0.15);
+    padding-left: 18px;
+  }
+  .entrada-butaca-num { font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--oro-claro); line-height: 1; }
+  .entrada-butaca-label { font-family: 'Cinzel', serif; font-size: 0.48rem; letter-spacing: 1px; color: var(--oro-oscuro); text-transform: uppercase; }
+  .entrada-info { padding: 10px 14px; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+  .entrada-persona { font-family: 'Playfair Display', serif; font-size: 0.95rem; color: var(--crema); }
+  .entrada-fila { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 1.5px; color: var(--oro-oscuro); text-transform: uppercase; }
+  .entrada-asiento-completo { font-size: 0.74rem; color: var(--gris-medio); margin-top: 1px; }
+
+  /* Censo */
+  .censo-list { max-height: 300px; overflow-y: auto; border: 1px solid rgba(201,168,76,0.15); border-radius: 2px; margin-bottom: 12px; }
+  .censo-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid rgba(201,168,76,0.07); font-size: 0.9rem; }
+  .censo-item:hover { background: rgba(255,255,255,0.03); }
+
+  textarea { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2); border-radius: 2px; padding: 12px; color: var(--crema); font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; resize: vertical; outline: none; min-height: 120px; transition: border-color 0.3s; }
+  textarea:focus { border-color: var(--oro); }
+  .sep { border: none; border-top: 1px solid rgba(201,168,76,0.15); margin: 20px 0; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 3px; }
+  .empty-state { text-align: center; padding: 40px; color: var(--gris-medio); font-style: italic; }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; display: block; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .nav-btn { padding: 12px 11px; font-size: 0.62rem; letter-spacing: 1px; }
+    .asiento { width: 17px; height: 17px; }
+    .plano-controls { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="header-crown">👑</div>
+    <h1>Sorteo Presentación</h1>
+    <h2>Gestión de Entradas y Asientos</h2>
+  </header>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showTab('config')">⚙ Configuración</button>
+    <button class="nav-btn" onclick="showTab('censo')">📋 Censo</button>
+    <button class="nav-btn" onclick="showTab('sorteo')">🎲 Sorteo</button>
+    <button class="nav-btn" onclick="showTab('plano')">🗺 Plano</button>
+    <button class="nav-btn" onclick="showTab('entradas')">🎟 Entradas</button>
+  </nav>
+
+  <!-- CONFIGURACIÓN -->
+  <div id="tab-config" class="tab-content active">
+    <div class="stats-row" id="stats-config"></div>
+    <div class="card">
+      <div class="card-title">⚙ Parámetros del Sorteo Mayor</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Filas</label><input type="number" id="cf-filas" value="22" min="1" max="50"></div>
+        <div class="form-group"><label>Butacas por fila (por lado)</label><input type="number" id="cf-butacas" value="12" min="2" max="40" step="2"></div>
+        <div class="form-group"><label>Filas sin asignar (delanteras)</label><input type="number" id="cf-filas-skip" value="3" min="0" max="10"></div>
+        <div class="form-group"><label>Plazas de Grada</label><input type="number" id="cf-grada" value="135" min="0" max="500"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚙ Parámetros del Sorteo Infantil</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Filas</label><input type="number" id="ci-filas" value="20" min="1" max="50"></div>
+        <div class="form-group"><label>Butacas por fila (por lado)</label><input type="number" id="ci-butacas" value="12" min="2" max="40" step="2"></div>
+        <div class="form-group"><label>Filas sin asignar (delanteras)</label><input type="number" id="ci-filas-skip" value="4" min="0" max="10"></div>
+        <div class="form-group"><label>Plazas de Grada</label><input type="number" id="ci-grada" value="0" min="0" max="500"></div>
+      </div>
+    </div>
+    <div id="msg-config" class="msg"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="guardarConfig()">💾 Guardar Configuración</button>
+      <button class="btn" onclick="resetConfig()">↺ Restaurar por Defecto</button>
+    </div>
+  </div>
+
+  <!-- CENSO -->
+  <div id="tab-censo" class="tab-content">
+    <div class="card">
+      <div class="card-title">📋 Censo — Sorteo Mayor</div>
+      <p style="font-size:0.85rem;color:var(--gris-medio);margin-bottom:12px;">Introduce los nombres, uno por línea.</p>
+      <textarea id="censo-mayor-input" placeholder="María García López&#10;José Martínez Ruiz&#10;Ana Fernández Pérez&#10;..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" onclick="cargarCenso('mayor')">✔ Cargar Censo Mayor</button>
+        <button class="btn btn-danger btn-sm" onclick="limpiarCenso('mayor')">✕ Limpiar</button>
+      </div>
+      <div id="msg-censo-mayor" class="msg" style="margin-top:10px;"></div>
+      <div id="censo-mayor-list" class="censo-list" style="margin-top:14px;"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Censo — Sorteo Infantil</div>
+      <p style="font-size:0.85rem;color:var(--gris-medio);margin-bottom:12px;">Introduce los nombres, uno por línea.</p>
+      <textarea id="censo-infantil-input" placeholder="Lucía Torres&#10;Pablo Sánchez&#10;..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary btn-sm" onclick="cargarCenso('infantil')">✔ Cargar Censo Infantil</button>
+        <button class="btn btn-danger btn-sm" onclick="limpiarCenso('infantil')">✕ Limpiar</button>
+      </div>
+      <div id="msg-censo-infantil" class="msg" style="margin-top:10px;"></div>
+      <div id="censo-infantil-list" class="censo-list" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <!-- SORTEO -->
+  <div id="tab-sorteo" class="tab-content">
+    <div class="stats-row" id="stats-sorteo"></div>
+    <div class="card">
+      <div class="card-title">🎲 Ejecutar Sorteo</div>
+      <div class="form-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Tipo de Sorteo</label>
+          <select id="tipo-sorteo">
+            <option value="mayor">Sorteo Mayor</option>
+            <option value="infantil">Sorteo Infantil</option>
+          </select>
+        </div>
+      </div>
+      <div id="msg-sorteo" class="msg"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="ejecutarSorteo()">🎲 Realizar Sorteo</button>
+        <button class="btn" onclick="exportarResultado()">⬇ Exportar .txt</button>
+        <button class="btn btn-danger" onclick="limpiarSorteo()">✕ Borrar Resultado</button>
+      </div>
+    </div>
+    <div class="card" id="card-resultado" style="display:none;">
+      <div class="card-title">📜 Resultado</div>
+      <div id="lista-resultado" class="result-list"></div>
+    </div>
+  </div>
+
+  <!-- PLANO -->
+  <div id="tab-plano" class="tab-content">
+    <div class="card">
+      <div class="card-title">🗺 Plano del Teatro</div>
+
+      <div class="plano-controls">
+        <div class="form-group">
+          <label>Ver sorteo</label>
+          <select id="plano-tipo" onchange="onPlanoTipoChange()">
+            <option value="mayor">Sorteo Mayor</option>
+            <option value="infantil">Sorteo Infantil</option>
+            <option value="importado">Sorteo Importado</option>
+          </select>
+        </div>
+        <div class="search-inline">
+          <label>🔍 Buscar persona</label>
+          <div class="search-inline-row">
+            <input type="text" id="plano-buscar-input" placeholder="Nombre o apellido..."
+              oninput="buscarEnPlano()" onkeydown="if(event.key==='Escape')limpiarBusquedaPlano()">
+            <button class="btn btn-sm" onclick="limpiarBusquedaPlano()">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="plano-search-result" class="search-result-bar"></div>
+
+      <div class="leyenda">
+        <div class="leyenda-item"><div class="leyenda-dot" style="background:rgba(61,139,90,0.4);border:1px solid rgba(61,139,90,0.7)"></div>Libre / Sin asignar</div>
+        <div class="leyenda-item"><div class="leyenda-dot" style="background:rgba(139,26,26,0.5);border:1px solid rgba(139,26,26,0.8)"></div>Asignado (sorteo actual)</div>
+        <div class="leyenda-item"><div class="leyenda-dot" style="background:rgba(26,90,139,0.5);border:1px solid rgba(74,144,196,0.8)"></div>Asignado (importado)</div>
+        <div class="leyenda-item"><div class="leyenda-dot" style="background:rgba(201,168,76,0.75);border:1px solid var(--oro)"></div>Encontrado en búsqueda</div>
+      </div>
+    </div>
+
+    <!-- Panel importar (visible solo cuando se selecciona "Sorteo Importado") -->
+    <div class="card" id="card-importar" style="display:none;border-color:rgba(74,144,196,0.3);">
+      <div class="card-title" style="color:#7FC4F5;border-bottom-color:rgba(74,144,196,0.25);">📂 Importar Sorteo Anterior</div>
+      <p style="font-size:0.85rem;color:var(--gris-medio);margin-bottom:14px;">
+        Pega el contenido de un fichero exportado (.txt) para visualizarlo sobre el plano.<br>
+        Formato: <code style="color:var(--oro-oscuro)">1. Nombre Apellidos  -  Fila X · Par N Izq</code>
+      </p>
+      <textarea id="importar-input" rows="6" placeholder="1. María García López  -  Fila 5 · Par 1 Der&#10;2. José Martínez Ruiz  -  Fila 5 · Par 2 Der&#10;..."></textarea>
+      <div id="msg-importar" class="msg"></div>
+      <div class="btn-row">
+        <button class="btn btn-import" onclick="importarSorteo()">📂 Cargar e Importar</button>
+        <button class="btn btn-danger btn-sm" onclick="limpiarImportado()">✕ Limpiar Importado</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="teatro" class="teatro-wrap">
+        <div class="empty-state"><span class="icon">🎭</span>Realiza el sorteo para ver el plano</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENTRADAS -->
+  <div id="tab-entradas" class="tab-content">
+    <div class="card">
+      <div class="card-title">🎟 Entradas Individuales</div>
+      <div class="form-group" style="max-width:260px;margin-bottom:16px;">
+        <label>Tipo de sorteo</label>
+        <select id="entradas-tipo" onchange="renderEntradas()">
+          <option value="mayor">Sorteo Mayor</option>
+          <option value="infantil">Sorteo Infantil</option>
+        </select>
+      </div>
+      <p style="font-size:0.85rem;color:var(--gris-medio);margin-bottom:4px;">
+        Cada persona recibe <strong style="color:var(--oro)">2 entradas</strong> — una por cada butaca de su par asignado. Las butacas son contiguas, numeradas desde el centro (1) hacia los extremos.
+      </p>
+    </div>
+    <div id="entradas-container">
+      <div class="empty-state"><span class="icon">🎟</span>Realiza el sorteo para generar las entradas</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="tooltip" class="tooltip"></div>
+
+<script>
+// ══ ESTADO ══
+const STATE = {
+  config: {
+    mayor:    { filas: 22, butacas: 12, filasSkip: 3, grada: 135 },
+    infantil: { filas: 20, butacas: 12, filasSkip: 4, grada: 0 }
+  },
+  censo:     { mayor: [], infantil: [] },
+  resultado: { mayor: [], infantil: [] },
+  importado: []
+};
+
+function guardarEstado() {
+  try { localStorage.setItem('trampot_v4', JSON.stringify(STATE)); } catch(e){}
+}
+function cargarEstado() {
+  try {
+    const s = localStorage.getItem('trampot_v4') || localStorage.getItem('fallera_state');
+    if (s) {
+      const L = JSON.parse(s);
+      Object.assign(STATE.config, L.config || {});
+      Object.assign(STATE.censo, L.censo || {});
+      // Migrar resultado si viene del formato antiguo (sin butacaA/B)
+      if (L.resultado) {
+        ['mayor','infantil'].forEach(t => {
+          if (L.resultado[t]) STATE.resultado[t] = L.resultado[t];
+        });
+      }
+      STATE.importado = L.importado || [];
+    }
+  } catch(e){}
+}
+
+// ══ NAVEGACIÓN ══
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'plano')    renderPlano();
+  if (name === 'config')   updateStatsConfig();
+  if (name === 'sorteo')   { updateStatsSorteo(); renderResultado(document.getElementById('tipo-sorteo').value); }
+  if (name === 'censo')    renderCensoLists();
+  if (name === 'entradas') renderEntradas();
+}
+
+// ══ CONFIGURACIÓN ══
+function guardarConfig() {
+  STATE.config.mayor    = { filas: +document.getElementById('cf-filas').value, butacas: +document.getElementById('cf-butacas').value, filasSkip: +document.getElementById('cf-filas-skip').value, grada: +document.getElementById('cf-grada').value };
+  STATE.config.infantil = { filas: +document.getElementById('ci-filas').value, butacas: +document.getElementById('ci-butacas').value, filasSkip: +document.getElementById('ci-filas-skip').value, grada: +document.getElementById('ci-grada').value };
+  guardarEstado();
+  showMsg('msg-config', '✔ Configuración guardada correctamente.', 'ok');
+  updateStatsConfig();
+}
+function resetConfig() {
+  STATE.config.mayor    = { filas: 22, butacas: 12, filasSkip: 3, grada: 135 };
+  STATE.config.infantil = { filas: 20, butacas: 12, filasSkip: 4, grada: 0 };
+  loadConfigForm(); guardarEstado();
+  showMsg('msg-config', '↺ Configuración restaurada a valores por defecto.', 'info');
+  updateStatsConfig();
+}
+function loadConfigForm() {
+  const m = STATE.config.mayor, i = STATE.config.infantil;
+  document.getElementById('cf-filas').value = m.filas;
+  document.getElementById('cf-butacas').value = m.butacas;
+  document.getElementById('cf-filas-skip').value = m.filasSkip;
+  document.getElementById('cf-grada').value = m.grada;
+  document.getElementById('ci-filas').value = i.filas;
+  document.getElementById('ci-butacas').value = i.butacas;
+  document.getElementById('ci-filas-skip').value = i.filasSkip;
+  document.getElementById('ci-grada').value = i.grada;
+}
+function updateStatsConfig() {
+  const bM = generarBombo(STATE.config.mayor), bI = generarBombo(STATE.config.infantil);
+  document.getElementById('stats-config').innerHTML = `
+    <div class="stat-box"><span class="stat-num">${bM.length}</span><span class="stat-label">Pares Mayor</span></div>
+    <div class="stat-box"><span class="stat-num">${STATE.censo.mayor.length}</span><span class="stat-label">Personas Mayor</span></div>
+    <div class="stat-box"><span class="stat-num">${bI.length}</span><span class="stat-label">Pares Infantil</span></div>
+    <div class="stat-box"><span class="stat-num">${STATE.censo.infantil.length}</span><span class="stat-label">Personas Infantil</span></div>`;
+}
+
+// ══ BOMBO ══
+// Pares desde el centro (par 1 = butacas 1-2 junto al pasillo) hacia afuera
+function calcPares(butacas) {
+  const res = [];
+  let seat = 1, parNum = 1;
+  while (seat <= butacas) {
+    res.push({ num: parNum, a: seat, b: seat + 1 });
+    seat += 2; parNum++;
+  }
+  return res;
+}
+
+function generarBombo(cfg) {
+  const { filas, butacas, filasSkip, grada } = cfg;
+  const bomboFilas = [];
+  const bomboGrada = [];
+  for (let f = 1; f <= filas; f++) {
+    if (f <= filasSkip) continue;
+    calcPares(butacas).forEach(p => {
+      bomboFilas.push({ key: `Fila ${f} · Par ${p.num} Izq`, fila: f, parNum: p.num, lado: 'Izq', a: p.a, b: p.b });
+      bomboFilas.push({ key: `Fila ${f} · Par ${p.num} Der`, fila: f, parNum: p.num, lado: 'Der', a: p.a, b: p.b });
+    });
+  }
+  for (let j = 0; j < grada; j++) bomboGrada.push({ key: 'Grada', fila: null, parNum: null, lado: null, a: null, b: null });
+  // Grada va SIEMPRE al final (solo se sortea cuando no quedan filas)
+  return [...bomboFilas, ...bomboGrada];
+}
+
+// Versión que devuelve solo las filas (sin grada), para stats
+function generarBomboSoloFilas(cfg) {
+  const { filas, butacas, filasSkip } = cfg;
+  const bombo = [];
+  for (let f = 1; f <= filas; f++) {
+    if (f <= filasSkip) continue;
+    calcPares(butacas).forEach(p => {
+      bombo.push(`Fila ${f} · Par ${p.num} Izq`);
+      bombo.push(`Fila ${f} · Par ${p.num} Der`);
+    });
+  }
+  return bombo;
+}
+
+// ══ CENSO ══
+function cargarCenso(tipo) {
+  const raw = document.getElementById(`censo-${tipo}-input`).value.trim();
+  const lineas = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lineas.length) { showMsg(`msg-censo-${tipo}`, '⚠ No se ha introducido ningún nombre.', 'err'); return; }
+  STATE.censo[tipo] = [...new Set(lineas)];
+  guardarEstado();
+  showMsg(`msg-censo-${tipo}`, `✔ ${STATE.censo[tipo].length} personas cargadas.`, 'ok');
+  renderCensoList(tipo); updateStatsConfig();
+}
+function limpiarCenso(tipo) {
+  STATE.censo[tipo] = [];
+  document.getElementById(`censo-${tipo}-input`).value = '';
+  guardarEstado(); renderCensoList(tipo); updateStatsConfig();
+  showMsg(`msg-censo-${tipo}`, '✕ Censo borrado.', 'info');
+}
+function renderCensoList(tipo) {
+  const list = document.getElementById(`censo-${tipo}-list`);
+  const censo = STATE.censo[tipo];
+  list.innerHTML = censo.length ? censo.map((p,i) => `<div class="censo-item"><span style="color:var(--gris-medio);font-size:0.75rem;font-family:'Cinzel',serif">${i+1}</span><span>${p}</span></div>`).join('') : '<div class="empty-state" style="padding:20px;"><em>Sin personas en el censo</em></div>';
+}
+function renderCensoLists() {
+  renderCensoList('mayor'); renderCensoList('infantil');
+  ['mayor','infantil'].forEach(t => {
+    const ta = document.getElementById(`censo-${t}-input`);
+    if (STATE.censo[t].length && !ta.value.trim()) ta.value = STATE.censo[t].join('\n');
+  });
+}
+
+// ══ SORTEO ══
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function updateStatsSorteo() {
+  const tipo = document.getElementById('tipo-sorteo').value;
+  const bombo = generarBombo(STATE.config[tipo]);
+  const censo = STATE.censo[tipo];
+  const res   = STATE.resultado[tipo];
+  const soloFilas = bombo.filter(b => b.fila !== null);
+  const soloGrada = bombo.filter(b => b.fila === null);
+  document.getElementById('stats-sorteo').innerHTML = `
+    <div class="stat-box"><span class="stat-num">${censo.length}</span><span class="stat-label">Personas en Censo</span></div>
+    <div class="stat-box"><span class="stat-num">${soloFilas.length}</span><span class="stat-label">Pares en Filas</span></div>
+    <div class="stat-box"><span class="stat-num">${soloGrada.length}</span><span class="stat-label">Plazas Gradería</span></div>
+    <div class="stat-box"><span class="stat-num">${res.length}</span><span class="stat-label">Ya Asignados</span></div>`;
+}
+
+function ejecutarSorteo() {
+  const tipo = document.getElementById('tipo-sorteo').value;
+  const censoCopia = [...STATE.censo[tipo]];
+  const cfg = STATE.config[tipo];
+  if (!censoCopia.length) { showMsg('msg-sorteo', '⚠ El censo está vacío. Ve a la pestaña Censo.', 'err'); return; }
+
+  // Construir filas y grada por separado, barajar cada grupo
+  const { filas, butacas, filasSkip, grada } = cfg;
+  const bomboFilas = [];
+  for (let f = 1; f <= filas; f++) {
+    if (f <= filasSkip) continue;
+    calcPares(butacas).forEach(p => {
+      bomboFilas.push({ key: `Fila ${f} · Par ${p.num} Izq`, fila: f, parNum: p.num, lado: 'Izq', a: p.a, b: p.b });
+      bomboFilas.push({ key: `Fila ${f} · Par ${p.num} Der`, fila: f, parNum: p.num, lado: 'Der', a: p.a, b: p.b });
+    });
+  }
+  const bomboGrada = [];
+  for (let j = 0; j < grada; j++) bomboGrada.push({ key: 'Grada', fila: null, parNum: null, lado: null, a: null, b: null });
+
+  shuffle(bomboFilas);
+  shuffle(bomboGrada);
+  // PRIORIDAD: primero todas las filas, luego gradería
+  const bombo = [...bomboFilas, ...bomboGrada];
+
+  const resultado = [];
+  while (censoCopia.length) {
+    const persona = censoCopia.shift();
+    if (bombo.length) {
+      const par = bombo.shift();
+      resultado.push({ persona, asiento: par.key, fila: par.fila, parNum: par.parNum, lado: par.lado, butacaA: par.a, butacaB: par.b });
+    } else {
+      resultado.push({ persona, asiento: '(Sin asiento disponible)', fila: null, parNum: null, lado: null, butacaA: null, butacaB: null });
+    }
+  }
+  STATE.resultado[tipo] = resultado;
+  guardarEstado();
+
+  const enFilas = resultado.filter(r => r.fila !== null).length;
+  const enGrada = resultado.filter(r => r.asiento === 'Grada').length;
+  const sinSit  = resultado.filter(r => r.asiento === '(Sin asiento disponible)').length;
+  let msg = `✔ Sorteo completado: ${enFilas} en butacas`;
+  if (enGrada) msg += `, ${enGrada} en gradería`;
+  if (sinSit)  msg += `, ${sinSit} sin asiento`;
+  showMsg('msg-sorteo', msg + '.', 'ok');
+  renderResultado(tipo); updateStatsSorteo();
+}
+
+function renderResultado(tipo) {
+  const res = STATE.resultado[tipo];
+  document.getElementById('card-resultado').style.display = res.length ? 'block' : 'none';
+  if (!res.length) return;
+  document.getElementById('lista-resultado').innerHTML = res.map((r,i) => `
+    <div class="result-row">
+      <span class="result-num">${i+1}</span>
+      <span class="result-persona">${r.persona}</span>
+      <span class="result-asiento">${r.asiento}</span>
+    </div>`).join('');
+}
+
+function limpiarSorteo() {
+  const tipo = document.getElementById('tipo-sorteo').value;
+  STATE.resultado[tipo] = [];
+  guardarEstado();
+  document.getElementById('card-resultado').style.display = 'none';
+  showMsg('msg-sorteo', '✕ Resultado borrado.', 'info');
+  updateStatsSorteo();
+}
+
+function exportarResultado() {
+  const tipo = document.getElementById('tipo-sorteo').value;
+  const res  = STATE.resultado[tipo];
+  if (!res.length) { showMsg('msg-sorteo', '⚠ Primero realiza el sorteo.', 'err'); return; }
+  const txt = res.map((r,i) => `${i+1}. ${r.persona}  -  ${r.asiento}`).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=utf-8' }));
+  a.download = `Resultado_Sorteo_${tipo === 'mayor' ? 'Mayor' : 'Infantil'}.txt`;
+  a.click();
+}
+
+// ══ IMPORTAR ══
+function importarSorteo() {
+  const raw = document.getElementById('importar-input').value.trim();
+  if (!raw) { showMsg('msg-importar', '⚠ El campo está vacío.', 'err'); return; }
+  const parsed = [];
+  raw.split('\n').forEach(linea => {
+    linea = linea.trim();
+    if (!linea) return;
+    // Acepta: "N. Nombre  -  Asiento" o "Nombre  -  Asiento" (separador: dos+ espacios + guión + dos+ espacios)
+    const m = linea.match(/^(?:\d+\.\s+)?(.+?)\s{1,}-{1,2}\s{1,}(.+)$/);
+    if (m) parsed.push({ persona: m[1].trim(), asiento: m[2].trim() });
+  });
+  if (!parsed.length) { showMsg('msg-importar', '⚠ No se pudo leer ninguna línea. Comprueba el formato.', 'err'); return; }
+  STATE.importado = parsed;
+  guardarEstado();
+  showMsg('msg-importar', `✔ Importados ${parsed.length} registros. Visualizando en el plano.`, 'ok');
+  renderPlano();
+}
+
+function limpiarImportado() {
+  STATE.importado = [];
+  document.getElementById('importar-input').value = '';
+  guardarEstado();
+  renderPlano();
+  showMsg('msg-importar', '✕ Datos importados eliminados.', 'info');
+}
+
+// ══ PLANO ══
+function onPlanoTipoChange() {
+  limpiarBusquedaPlano();
+  const tipo = document.getElementById('plano-tipo').value;
+  document.getElementById('card-importar').style.display = tipo === 'importado' ? 'block' : 'none';
+  renderPlano();
+}
+
+function renderPlano(highlightKeys = []) {
+  const tipoSel    = document.getElementById('plano-tipo').value;
+  const esImportado = tipoSel === 'importado';
+  // Para el plano importado usamos la config del mayor (misma distribución)
+  const cfgTipo    = esImportado ? 'mayor' : tipoSel;
+  const cfg        = STATE.config[cfgTipo];
+  const resultado  = esImportado ? STATE.importado : STATE.resultado[tipoSel];
+  const teatro     = document.getElementById('teatro');
+
+  if (!resultado.length) {
+    teatro.innerHTML = `<div class="empty-state"><span class="icon">🎭</span>${esImportado ? 'Importa un sorteo anterior para visualizarlo' : 'Realiza el sorteo para ver el plano'}</div>`;
+    return;
+  }
+
+  // Mapa clave → persona
+  const mapa = {};
+  resultado.forEach(r => { if (r.asiento && r.asiento !== '(Sin asiento disponible)') mapa[r.asiento] = r.persona; });
+  const gradaPersonas = resultado.filter(r => r.asiento === 'Grada');
+
+  let html = `<div class="escenario">✦ ESCENARIO ✦</div>`;
+
+  for (let f = 1; f <= cfg.filas; f++) {
+    if (f <= cfg.filasSkip) continue;
+    const ps = calcPares(cfg.butacas);
+
+    html += `<div class="fila-container"><span class="fila-label">Fila ${f}</span><div class="fila-asientos">`;
+
+    // Izquierda: par más alejado primero → par 1 junto al pasillo
+    [...ps].reverse().forEach((p, idx) => {
+      const key     = `Fila ${f} · Par ${p.num} Izq`;
+      const persona = mapa[key];
+      const hl      = highlightKeys.includes(key);
+      const cls     = hl ? 'highlight' : (persona ? (esImportado ? 'importado' : 'ocupado') : 'libre');
+      if (idx > 0) html += `<div class="par-gap"></div>`;
+      html += `<div class="par-wrap">
+        <div class="par-butacas">
+          <div class="asiento-wrap"><div class="seat-num">${p.b}</div><div class="asiento ${cls}" data-key="${esc(key)}" data-persona="${esc(persona||'')}" data-butaca="${p.b}" onmouseenter="showTT(event,this)" onmouseleave="hideTT()"></div></div>
+          <div class="asiento-wrap"><div class="seat-num">${p.a}</div><div class="asiento ${cls}" data-key="${esc(key)}" data-persona="${esc(persona||'')}" data-butaca="${p.a}" onmouseenter="showTT(event,this)" onmouseleave="hideTT()"></div></div>
+        </div></div>`;
+    });
+
+    html += `<div class="pasillo"></div>`;
+
+    // Derecha: par 1 junto al pasillo → más alejado al final
+    ps.forEach((p, idx) => {
+      const key     = `Fila ${f} · Par ${p.num} Der`;
+      const persona = mapa[key];
+      const hl      = highlightKeys.includes(key);
+      const cls     = hl ? 'highlight' : (persona ? (esImportado ? 'importado' : 'ocupado') : 'libre');
+      if (idx > 0) html += `<div class="par-gap"></div>`;
+      html += `<div class="par-wrap">
+        <div class="par-butacas">
+          <div class="asiento-wrap"><div class="seat-num">${p.a}</div><div class="asiento ${cls}" data-key="${esc(key)}" data-persona="${esc(persona||'')}" data-butaca="${p.a}" onmouseenter="showTT(event,this)" onmouseleave="hideTT()"></div></div>
+          <div class="asiento-wrap"><div class="seat-num">${p.b}</div><div class="asiento ${cls}" data-key="${esc(key)}" data-persona="${esc(persona||'')}" data-butaca="${p.b}" onmouseenter="showTT(event,this)" onmouseleave="hideTT()"></div></div>
+        </div></div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  // Gradería
+  if (cfg.grada > 0) {
+    html += `<div style="text-align:center;margin-top:16px;font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:2px;color:var(--oro-oscuro)">— GRADERÍA —</div><div class="zona-grada">`;
+    for (let j = 0; j < cfg.grada; j++) {
+      const persona = gradaPersonas[j] ? gradaPersonas[j].persona : null;
+      const hl  = highlightKeys.includes('Grada') && !!persona;
+      const cls = hl ? 'highlight' : (persona ? (esImportado ? 'importado' : 'ocupado') : 'libre');
+      html += `<div class="grada-item ${cls}" data-key="Grada" data-persona="${esc(persona||'')}" onmouseenter="showTT(event,this)" onmouseleave="hideTT()"></div>`;
+    }
+    html += `</div>`;
+  }
+
+  teatro.innerHTML = html;
+}
+
+function esc(s) { return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+function showTT(e, el) {
+  const key = el.dataset.key, persona = el.dataset.persona, butaca = el.dataset.butaca;
+  if (!key) return;
+  let html = `<strong>${key}</strong>`;
+  if (butaca) html += `<span style="color:var(--oro-oscuro);font-family:'Cinzel',serif;font-size:0.68rem"> · Butaca ${butaca}</span><br>`;
+  html += persona || '<em style="color:var(--gris-medio)">Sin asignar</em>';
+  tooltip.innerHTML = html;
+  tooltip.classList.add('show');
+  moveTT(e);
+}
+function hideTT() { tooltip.classList.remove('show'); }
+document.addEventListener('mousemove', e => { if (tooltip.classList.contains('show')) moveTT(e); });
+function moveTT(e) { tooltip.style.left = (e.clientX+14)+'px'; tooltip.style.top = (e.clientY-10)+'px'; }
+
+// ══ BUSCADOR EN PLANO ══
+let sTimeout = null;
+function buscarEnPlano() { clearTimeout(sTimeout); sTimeout = setTimeout(_doSearch, 200); }
+
+function _doSearch() {
+  const tipoSel    = document.getElementById('plano-tipo').value;
+  const esImportado = tipoSel === 'importado';
+  const query      = document.getElementById('plano-buscar-input').value.trim().toLowerCase();
+  const bar        = document.getElementById('plano-search-result');
+
+  if (query.length < 2) { bar.classList.remove('show'); bar.innerHTML = ''; renderPlano([]); return; }
+
+  const resultado = esImportado ? STATE.importado : STATE.resultado[tipoSel];
+  if (!resultado.length) { bar.innerHTML = `<span style="color:var(--gris-medio)">⚠ No hay sorteo cargado.</span>`; bar.classList.add('show'); return; }
+
+  const coincidencias = resultado.filter(r => r.persona.toLowerCase().includes(query));
+  if (!coincidencias.length) {
+    bar.innerHTML = `<span style="color:var(--gris-medio)">No se encontró ninguna persona con "<strong style="color:var(--crema)">${query}</strong>"</span>`;
+    bar.classList.add('show'); renderPlano([]); return;
+  }
+
+  const keys = coincidencias.map(r => r.asiento);
+  renderPlano(keys);
+
+  if (coincidencias.length === 1) {
+    const r = coincidencias[0];
+    bar.innerHTML = `<span class="persona-nombre-inline">👤 ${r.persona}</span><span class="tag">${r.asiento}</span>`;
+  } else {
+    bar.innerHTML = `<span style="color:var(--gris-medio)">${coincidencias.length} coincidencias:</span>`
+      + coincidencias.map(r => `<span class="tag" style="font-size:0.68rem">${r.persona.split(' ')[0]}: ${r.asiento}</span>`).join('');
+  }
+  bar.classList.add('show');
+}
+
+function limpiarBusquedaPlano() {
+  document.getElementById('plano-buscar-input').value = '';
+  const bar = document.getElementById('plano-search-result');
+  bar.classList.remove('show'); bar.innerHTML = '';
+  renderPlano([]);
+}
+
+// ══ ENTRADAS INDIVIDUALES ══
+function renderEntradas() {
+  const tipo = document.getElementById('entradas-tipo').value;
+  const res  = STATE.resultado[tipo];
+  const cont = document.getElementById('entradas-container');
+  if (!res.length) {
+    cont.innerHTML = '<div class="empty-state"><span class="icon">🎟</span>Realiza el sorteo para generar las entradas</div>';
+    return;
+  }
+  let html = '<div class="entradas-grid">';
+  res.forEach(r => {
+    if (!r.fila) {
+      html += `<div class="entrada"><div class="entrada-lado"><span class="entrada-butaca-num">—</span><span class="entrada-butaca-label">Butaca</span></div><div class="entrada-info"><div class="entrada-persona">${r.persona}</div><div class="entrada-fila">Sin asiento asignado</div></div></div>`;
+      return;
+    }
+    const lado = r.lado === 'Izq' ? 'Izquierda' : 'Derecha';
+    [
+      { butaca: r.butacaA, desc: 'Pasillo' },
+      { butaca: r.butacaB, desc: 'Exterior' }
+    ].forEach(({ butaca, desc }) => {
+      html += `
+        <div class="entrada">
+          <div class="entrada-lado">
+            <span class="entrada-butaca-num">${butaca ?? '?'}</span>
+            <span class="entrada-butaca-label">Butaca</span>
+          </div>
+          <div class="entrada-info">
+            <div class="entrada-persona">${r.persona}</div>
+            <div class="entrada-fila">Fila ${r.fila} · ${lado} · Par ${r.parNum}</div>
+            <div class="entrada-asiento-completo">${r.asiento} · ${desc}</div>
+          </div>
+        </div>`;
+    });
+  });
+  html += '</div>';
+  cont.innerHTML = html;
+}
+
+// ══ UTIL ══
+function showMsg(id, text, tipo) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = `msg msg-${tipo} show`;
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+// ══ INIT ══
+cargarEstado();
+loadConfigForm();
+updateStatsConfig();
+renderCensoLists();
+document.getElementById('card-importar').style.display = 'none';
+const tipoSelect = document.getElementById('tipo-sorteo');
+tipoSelect.addEventListener('change', () => { updateStatsSorteo(); renderResultado(tipoSelect.value); });
+renderResultado('mayor');
+updateStatsSorteo();
+</script>
+</body>
+</html>
