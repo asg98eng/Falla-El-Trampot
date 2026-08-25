@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#12172B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Puesto · Control de caja</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #12172B;
+    --panel: #171D35;
+    --panel2: #1D2440;
+    --barra: #E8A33D;
+    --merch: #4FD1C5;
+    --paid: #3FB950;
+    --ticket-bg: #F5F0E6;
+    --ticket-ink: #22261C;
+    --text: #F2F1EA;
+    --text-dim: #9AA3C2;
+    --danger: #E5484D;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; min-height: 100vh; width: 100%; overflow-x: hidden;
+    background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif;
+  }
+  button, input, .zone { touch-action: manipulation; }
+  button { -webkit-user-select: none; user-select: none; }
+
+  .loading-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 80px 20px; color: var(--text-dim); min-height: 100vh;
+  }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,.08);
+    flex-wrap: wrap; gap: 12px;
+  }
+  .brand {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: .3px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tabs { display: flex; gap: 6px; background: var(--panel); padding: 4px; border-radius: 10px; }
+  .tab-btn {
+    background: transparent; border: none; color: var(--text-dim);
+    padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px;
+  }
+  .tab-btn.active { background: var(--panel2); color: var(--text); }
+
+  .venta-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; padding: 20px 24px 40px; align-items: start; }
+  @media (max-width: 860px) {
+    .venta-layout { grid-template-columns: 1fr; padding: 16px 16px 32px; gap: 18px; }
+    .ticket { position: static; }
+  }
+
+  @media (max-width: 480px) {
+    .topbar { padding: 12px 14px; }
+    .brand { font-size: 15px; }
+    .brand svg { width: 16px; height: 16px; }
+    .tabs { width: 100%; justify-content: space-between; }
+    .tab-btn { flex: 1; justify-content: center; padding: 9px 8px; font-size: 12px; }
+    .venta-layout { padding: 14px 12px 28px; gap: 14px; }
+    .category-label { font-size: 11px; margin-bottom: 9px; }
+    .product-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+    .product-btn { height: 80px; }
+    .product-btn .name { font-size: 12.5px; padding: 0 16px; }
+    .product-btn .price { font-size: 11px; }
+    .ticket { padding: 16px; }
+    .ticket-title { font-size: 13px; }
+    .ticket-total-row { font-size: 19px; }
+    .field input { font-size: 16px; padding: 10px; }
+    .historial-view, .precios-view { padding: 14px 12px 36px; }
+    .summary-card { min-width: 130px; padding: 12px 14px; }
+    .summary-value { font-size: 16px; }
+    .precios-columns { gap: 24px; }
+  }
+
+  .category-block { margin-bottom: 26px; }
+  .category-label {
+    font-family: 'Space Grotesk', sans-serif; text-transform: uppercase;
+    letter-spacing: 2px; font-size: 12px; color: var(--text-dim);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .category-label::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .category-label.barra { color: var(--barra); }
+  .category-label.merch { color: var(--merch); }
+
+  .product-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px;
+  }
+
+  .product-btn {
+    position: relative; width: 100%; height: 88px; border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.09); background: var(--panel2); overflow: hidden;
+  }
+  .product-btn .zone { position: absolute; top: 0; bottom: 0; width: 50%; border: none; background: transparent; cursor: pointer; padding: 0; }
+  .product-btn .zone.left { left: 0; }
+  .product-btn .zone.right { right: 0; }
+  .product-btn .zone.left:hover { background: rgba(229,72,77,.10); }
+  .product-btn .zone.right:hover { background: rgba(63,185,80,.12); }
+  .product-btn .zone.left:active { background: rgba(229,72,77,.28); }
+  .product-btn .zone.right:active { background: rgba(63,185,80,.28); }
+  .product-btn .info {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px; pointer-events: none;
+    border-left: 3px solid var(--accent);
+  }
+  .product-btn .name { font-weight: 600; font-size: 13.5px; text-align: center; padding: 0 20px; }
+  .product-btn .price { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-dim); }
+  .product-btn .qty-badge {
+    position: absolute; top: 7px; right: 7px; min-width: 22px; height: 22px; padding: 0 5px;
+    border-radius: 11px; background: var(--accent); color: #12172B;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace; font-weight: 700; font-size: 12px;
+  }
+  .product-btn .hint { position: absolute; bottom: 6px; opacity: .3; pointer-events: none; }
+  .product-btn .hint-left { left: 8px; }
+  .product-btn .hint-right { right: 8px; }
+
+  .ticket {
+    background: var(--ticket-bg); color: var(--ticket-ink);
+    border-radius: 6px; padding: 22px; font-family: 'Space Mono', monospace;
+    position: sticky; top: 20px; box-shadow: 0 14px 34px rgba(0,0,0,.35);
+  }
+  .ticket-header { text-align: center; margin-bottom: 14px; }
+  .ticket-title { font-family: 'Space Grotesk', sans-serif; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; font-size: 14px; }
+  .ticket-sub { font-size: 11px; color: rgba(34,38,28,.55); margin-top: 2px; }
+  .ticket-items {
+    display: flex; flex-direction: column; gap: 7px; margin: 14px 0;
+    max-height: 260px; overflow-y: auto; padding-bottom: 12px;
+    border-bottom: 2px dashed rgba(34,38,28,.22);
+  }
+  .ticket-item-row { display: flex; justify-content: space-between; font-size: 13px; }
+  .ticket-empty { text-align: center; color: rgba(34,38,28,.45); font-size: 12px; padding: 22px 6px; line-height: 1.5; }
+  .ticket-total-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 21px; font-weight: 700; padding-top: 6px; }
+  .ticket-pay-fields { display: flex; gap: 10px; margin-top: 16px; }
+  .field { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: rgba(34,38,28,.5); }
+  .field input {
+    font-family: 'Space Mono', monospace; font-size: 16px; padding: 9px 10px;
+    border-radius: 6px; border: 1px solid rgba(34,38,28,.18); background: #fff; width: 100%;
+  }
+  .cambio-value { font-size: 16px; padding: 9px 10px; font-weight: 700; }
+  .cambio-value.negative { color: var(--danger); }
+
+  .btn-pagado {
+    width: 100%; margin-top: 18px; padding: 15px; border: none; border-radius: 9px;
+    background: var(--paid); color: #06210F; font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 15px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
+  }
+  .btn-pagado:disabled { opacity: .35; cursor: not-allowed; }
+  .btn-clear {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    margin: 10px auto 0; background: none; border: none;
+    color: rgba(34,38,28,.5); font-size: 11px; cursor: pointer; font-family: 'Inter', sans-serif;
+  }
+  .save-indicator {
+    display: block; text-align: center; margin-top: 10px; font-size: 10.5px;
+    color: rgba(34,38,28,.4); font-family: 'Inter', sans-serif;
+  }
+  .save-indicator.error { color: var(--danger); font-weight: 600; }
+
+  .historial-view { padding: 20px 24px 50px; }
+  .summary-cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .summary-card { background: var(--panel); border-radius: 10px; padding: 14px 18px; min-width: 150px; border-left: 3px solid var(--text-dim); flex: 1; }
+  .summary-card.barra { border-left-color: var(--barra); }
+  .summary-card.merch { border-left-color: var(--merch); }
+  .summary-label { display: block; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+  .summary-value { display: block; font-family: 'Space Mono', monospace; font-size: 19px; font-weight: 700; margin-top: 4px; }
+
+  .history-actions { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px; background: var(--panel2);
+    color: var(--text); border: 1px solid rgba(255,255,255,.1); padding: 10px 16px;
+    border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btn-secondary input[type="file"] { display: none; }
+
+  .history-table-wrap { background: var(--panel); border-radius: 12px; overflow-x: auto; }
+  .history-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; }
+  .history-table th {
+    text-align: left; padding: 12px 16px; color: var(--text-dim); font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .history-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .history-row { cursor: pointer; }
+  .history-row:hover { background: rgba(255,255,255,.03); }
+  .truncate { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pill { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .pill-cash { background: rgba(63,185,80,.18); color: #6FDB86; }
+  .pill-card { background: rgba(79,209,197,.18); color: var(--merch); }
+  .history-detail-row td { background: rgba(255,255,255,.02); padding: 6px 16px 16px; }
+  .detail-grid { display: flex; flex-direction: column; gap: 4px; font-family: 'Space Mono', monospace; font-size: 12px; }
+  .detail-line { display: flex; justify-content: space-between; color: var(--text-dim); max-width: 400px; }
+  .detail-line.dim { font-style: italic; opacity: .8; }
+
+  .precios-view { padding: 20px 24px 50px; max-width: 640px; }
+  .precios-columns { display: flex; gap: 40px; flex-wrap: wrap; margin-bottom: 24px; }
+  .precios-col { flex: 1; min-width: 220px; }
+  .precio-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .precio-input { display: flex; align-items: center; gap: 6px; }
+  .precio-input input {
+    width: 72px; padding: 7px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,.15);
+    background: var(--panel2); color: var(--text); font-family: 'Space Mono', monospace; font-size: 13px;
+  }
+  .save-btn { max-width: 240px; }
+  .saved-msg { margin-top: 12px; color: var(--paid); font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="loading-screen">
+    <span class="spin">⏳</span>
+    <span>Cargando caja…</span>
+  </div>
+</div>
+
+<script>
+const PRODUCTS_KEY = "pos_products_v1";
+const SALES_KEY = "pos_sales_v1";
+const CART_KEY = "pos_cart_v1";
+
+const DEFAULT_PRODUCTS = {
+  barra: [
+    { id: "cubata", name: "Cubata", price: 4 },
+    { id: "cerveza", name: "Cerveza", price: 1.5 },
+    { id: "refresco", name: "Refresco", price: 1.5 },
+    { id: "tinto", name: "Tinto de Verano", price: 2 },
+    { id: "agua", name: "Agua", price: 1 },
+    { id: "vino", name: "Vino", price: 1.5 },
+  ],
+  merch: [
+    { id: "abanico", name: "Abanico", price: 3 },
+    { id: "totebag", name: "Totebag", price: 7 },
+    { id: "combo", name: "Combo", price: 8 },
+  ],
+};
+
+const ICON = {
+  cart: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>',
+  history: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>',
+  settings: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
+  minus: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>',
+  plus: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>',
+  download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+  upload: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>',
+  chevronDown: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>',
+  chevronUp: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>',
+  trash: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>',
+  save: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>',
+};
+
+let products = DEFAULT_PRODUCTS;
+let sales = [];
+let cart = {};
+let tab = "venta";
+let efectivoValue = "";
+let expandedSaleId = null;
+let saveTimeout = null;
+let lastSaveFailed = false;
+
+/* ---------- storage helpers ----------
+   Esta versión funciona como archivo .html independiente (abierto directamente
+   en el navegador, sin pasar por Claude), así que usa localStorage: los datos
+   quedan guardados en ESTE navegador y ESTE dispositivo, y sobreviven a cerrar
+   la pestaña, el navegador o reiniciar el equipo. */
+async function loadJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw);
+  } catch (e) {
+    return fallback;
+  }
+}
+async function saveJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    console.error("Error guardando", key, e);
+    return false;
+  }
+}
+
+function formatMoney(n) {
+  const v = Number.isFinite(n) ? n : 0;
+  return v.toFixed(2).replace(".", ",") + " €";
+}
+
+function flattenProducts(p) {
+  return [
+    ...p.barra.map((x) => ({ ...x, category: "barra" })),
+    ...p.merch.map((x) => ({ ...x, category: "merch" })),
+  ];
+}
+
+/* ---------- init ---------- */
+(async function init() {
+  const p = await loadJSON(PRODUCTS_KEY, null);
+  if (p) {
+    products = p;
+  } else {
+    products = DEFAULT_PRODUCTS;
+    await saveJSON(PRODUCTS_KEY, DEFAULT_PRODUCTS);
+  }
+  sales = await loadJSON(SALES_KEY, []);
+  const savedCart = await loadJSON(CART_KEY, null);
+  if (savedCart) {
+    cart = savedCart.cart || {};
+    efectivoValue = savedCart.efectivoValue || "";
+  }
+  render();
+})();
+
+window.addEventListener("beforeunload", function (e) {
+  const hasItems = Object.values(cart).some((q) => q > 0);
+  if (hasItems) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
+async function persistCart() {
+  const ok = await saveJSON(CART_KEY, { cart, efectivoValue });
+  lastSaveFailed = !ok;
+  updateSaveIndicator();
+}
+
+function updateSaveIndicator() {
+  const el = document.getElementById("save-indicator");
+  if (!el) return;
+  const hasItems = Object.values(cart).some((q) => q > 0);
+  if (!hasItems) {
+    el.textContent = "";
+    return;
+  }
+  el.textContent = lastSaveFailed
+    ? "⚠ No se ha podido guardar el carrito"
+    : "Carrito guardado en este dispositivo";
+  el.className = "save-indicator" + (lastSaveFailed ? " error" : "");
+}
+
+/* ---------- cart actions ---------- */
+function addOne(id) {
+  cart[id] = (cart[id] || 0) + 1;
+  persistCart();
+  render();
+}
+function removeOne(id) {
+  cart[id] = Math.max(0, (cart[id] || 0) - 1);
+  persistCart();
+  render();
+}
+function clearCart() {
+  cart = {};
+  efectivoValue = "";
+  persistCart();
+  render();
+}
+function onEfectivoInput(val) {
+  efectivoValue = val;
+  updateCambioDisplay();
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(persistCart, 400);
+}
+function computeCartLines() {
+  const byId = {};
+  flattenProducts(products).forEach((p) => (byId[p.id] = p));
+  return Object.entries(cart)
+    .filter(([, qty]) => qty > 0)
+    .map(([id, qty]) => {
+      const p = byId[id];
+      return p ? { ...p, qty, subtotal: p.price * qty } : null;
+    })
+    .filter(Boolean);
+}
+function updateCambioDisplay() {
+  const lines = computeCartLines();
+  const total = lines.reduce((s, l) => s + l.subtotal, 0);
+  const trimmed = efectivoValue.trim();
+  const num = parseFloat(trimmed.replace(",", ".")) || 0;
+  const cambio = trimmed !== "" ? num - total : null;
+  const el = document.getElementById("cambio-display");
+  if (el) {
+    el.textContent = cambio === null ? "—" : formatMoney(cambio);
+    el.className = "cambio-value" + (cambio !== null && cambio < 0 ? " negative" : "");
+  }
+}
+
+async function handlePagado() {
+  const lines = computeCartLines();
+  const total = lines.reduce((s, l) => s + l.subtotal, 0);
+  if (total <= 0) return;
+  const barraTotal = lines.filter((l) => l.category === "barra").reduce((s, l) => s + l.subtotal, 0);
+  const merchTotal = lines.filter((l) => l.category === "merch").reduce((s, l) => s + l.subtotal, 0);
+  const trimmed = efectivoValue.trim();
+  const efectivoNum = parseFloat(trimmed.replace(",", ".")) || 0;
+  const paymentMethod = trimmed !== "" ? "Efectivo" : "Datáfono";
+  const now = new Date();
+  const sale = {
+    id: `${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`,
+    timestamp: now.toISOString(),
+    items: lines.map((l) => ({ id: l.id, name: l.name, category: l.category, qty: l.qty, price: l.price, subtotal: l.subtotal })),
+    total,
+    paymentMethod,
+    efectivoRecibido: paymentMethod === "Efectivo" ? efectivoNum : null,
+    cambio: paymentMethod === "Efectivo" ? efectivoNum - total : null,
+    barraDatafono: paymentMethod === "Datáfono" ? barraTotal : 0,
+    barraEfectivo: paymentMethod === "Efectivo" ? barraTotal : 0,
+    merchDatafono: paymentMethod === "Datáfono" ? merchTotal : 0,
+    merchEfectivo: paymentMethod === "Efectivo" ? merchTotal : 0,
+  };
+  sales = [...sales, sale];
+  await saveJSON(SALES_KEY, sales);
+  cart = {};
+  efectivoValue = "";
+  await persistCart();
+  render();
+}
+
+function setTab(t) {
+  tab = t;
+  expandedSaleId = null;
+  render();
+}
+
+/* ---------- historial actions ---------- */
+function toggleExpand(id) {
+  expandedSaleId = expandedSaleId === id ? null : id;
+  render();
+}
+
+function exportExcel() {
+  const sorted = [...sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const ventasRows = sorted.map((s) => ({
+    id: s.id,
+    fecha_hora: new Date(s.timestamp).toLocaleString("es-ES"),
+    timestamp: s.timestamp,
+    metodoPago: s.paymentMethod,
+    total: s.total,
+    efectivoRecibido: s.efectivoRecibido ?? "",
+    cambio: s.cambio ?? "",
+    barraDatafono: s.barraDatafono,
+    barraEfectivo: s.barraEfectivo,
+    merchDatafono: s.merchDatafono,
+    merchEfectivo: s.merchEfectivo,
+  }));
+  const detalleRows = [];
+  sorted.forEach((s) => {
+    s.items.forEach((it) => {
+      detalleRows.push({
+        ventaId: s.id,
+        producto: it.name,
+        categoria: it.category,
+        cantidad: it.qty,
+        precioUnitario: it.price,
+        subtotal: it.subtotal,
+      });
+    });
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ventasRows), "Ventas");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalleRows), "Detalle");
+  XLSX.writeFile(wb, `ventas_puesto_${Date.now()}.xlsx`);
+}
+
+async function handleImport(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const ventasSheet = wb.Sheets["Ventas"];
+  const detalleSheet = wb.Sheets["Detalle"];
+  if (!ventasSheet) {
+    alert("El archivo no contiene una hoja 'Ventas'.");
+    return;
+  }
+  const ventasRows = XLSX.utils.sheet_to_json(ventasSheet);
+  const detalleRows = detalleSheet ? XLSX.utils.sheet_to_json(detalleSheet) : [];
+  const existingIds = new Set(sales.map((s) => String(s.id)));
+  const imported = [];
+  ventasRows.forEach((row) => {
+    const id = String(row.id);
+    if (existingIds.has(id)) return;
+    const items = detalleRows
+      .filter((d) => String(d.ventaId) === id)
+      .map((d) => ({
+        id: d.producto,
+        name: d.producto,
+        category: d.categoria,
+        qty: Number(d.cantidad) || 0,
+        price: Number(d.precioUnitario) || 0,
+        subtotal: Number(d.subtotal) || 0,
+      }));
+    imported.push({
+      id,
+      timestamp: row.timestamp || new Date().toISOString(),
+      items,
+      total: Number(row.total) || 0,
+      paymentMethod: row.metodoPago || "Datáfono",
+      efectivoRecibido: row.efectivoRecibido === "" ? null : Number(row.efectivoRecibido),
+      cambio: row.cambio === "" ? null : Number(row.cambio),
+      barraDatafono: Number(row.barraDatafono) || 0,
+      barraEfectivo: Number(row.barraEfectivo) || 0,
+      merchDatafono: Number(row.merchDatafono) || 0,
+      merchEfectivo: Number(row.merchEfectivo) || 0,
+    });
+  });
+  sales = [...sales, ...imported];
+  await saveJSON(SALES_KEY, sales);
+  alert(`Importadas ${imported.length} ventas nuevas.`);
+  event.target.value = "";
+  render();
+}
+
+/* ---------- precios actions ---------- */
+async function handleSavePrecios() {
+  const cleaned = { barra: [], merch: [] };
+  ["barra", "merch"].forEach((cat) => {
+    products[cat].forEach((p) => {
+      const input = document.getElementById(`precio-${cat}-${p.id}`);
+      const val = parseFloat((input.value || "0").replace(",", ".")) || 0;
+      cleaned[cat].push({ ...p, price: val });
+    });
+  });
+  products = cleaned;
+  await saveJSON(PRODUCTS_KEY, cleaned);
+  const msg = document.getElementById("saved-msg");
+  if (msg) msg.style.display = "block";
+}
+
+/* ---------- render ---------- */
+function render() {
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div class="topbar">
+      <div class="brand">${ICON.cart} Puesto · Control de caja</div>
+      <div class="tabs">
+        <button class="tab-btn ${tab === "venta" ? "active" : ""}" onclick="setTab('venta')">Venta</button>
+        <button class="tab-btn ${tab === "historial" ? "active" : ""}" onclick="setTab('historial')">${ICON.history} Historial</button>
+        <button class="tab-btn ${tab === "precios" ? "active" : ""}" onclick="setTab('precios')">${ICON.settings} Precios</button>
+      </div>
+    </div>
+    <div id="view"></div>
+  `;
+  const view = document.getElementById("view");
+  if (tab === "venta") view.innerHTML = renderVenta();
+  else if (tab === "historial") view.innerHTML = renderHistorial();
+  else view.innerHTML = renderPrecios();
+
+  if (tab === "venta") {
+    updateCambioDisplay();
+    updateSaveIndicator();
+  }
+}
+
+function productButtonHTML(p, accentVar) {
+  const qty = cart[p.id] || 0;
+  return `
+    <div class="product-btn" style="--accent:${accentVar}">
+      <button class="zone left" aria-label="Quitar ${p.name}" onclick="removeOne('${p.id}')"></button>
+      <button class="zone right" aria-label="Añadir ${p.name}" onclick="addOne('${p.id}')"></button>
+      <div class="info">
+        <span class="name">${p.name}</span>
+        <span class="price">${formatMoney(p.price)}</span>
+      </div>
+      <span class="hint hint-left">${ICON.minus}</span>
+      <span class="hint hint-right">${ICON.plus}</span>
+      ${qty > 0 ? `<span class="qty-badge">${qty}</span>` : ""}
+    </div>
+  `;
+}
+
+function renderVenta() {
+  const lines = computeCartLines();
+  const total = lines.reduce((s, l) => s + l.subtotal, 0);
+  const unidades = lines.reduce((s, l) => s + l.qty, 0);
+
+  return `
+    <div class="venta-layout">
+      <div class="products-col">
+        <div class="category-block">
+          <div class="category-label barra">Barra</div>
+          <div class="product-grid">
+            ${products.barra.map((p) => productButtonHTML(p, "var(--barra)")).join("")}
+          </div>
+        </div>
+        <div class="category-block">
+          <div class="category-label merch">Merchandising</div>
+          <div class="product-grid">
+            ${products.merch.map((p) => productButtonHTML(p, "var(--merch)")).join("")}
+          </div>
+        </div>
+      </div>
+
+      <div class="ticket">
+        <div class="ticket-header">
+          <div class="ticket-title">Ticket actual</div>
+          <div class="ticket-sub">${unidades} unidades</div>
+        </div>
+        <div class="ticket-items">
+          ${
+            lines.length === 0
+              ? `<div class="ticket-empty">Carrito vacío. Toca la mitad<br/>derecha de un producto para añadirlo.</div>`
+              : lines.map((l) => `
+                  <div class="ticket-item-row">
+                    <span>${l.qty}× ${l.name}</span>
+                    <span>${formatMoney(l.subtotal)}</span>
+                  </div>
+                `).join("")
+          }
+        </div>
+        <div class="ticket-total-row">
+          <span>Total</span>
+          <span>${formatMoney(total)}</span>
+        </div>
+        <div class="ticket-pay-fields">
+          <div class="field">
+            <label>Efectivo</label>
+            <input type="number" inputmode="decimal" placeholder="—" value="${efectivoValue}" oninput="onEfectivoInput(this.value)" />
+          </div>
+          <div class="field">
+            <label>Cambio</label>
+            <div id="cambio-display" class="cambio-value">—</div>
+          </div>
+        </div>
+        <button class="btn-pagado" ${total <= 0 ? "disabled" : ""} onclick="handlePagado()">Pagado</button>
+        ${
+          lines.length > 0
+            ? `<button class="btn-clear" onclick="clearCart()">${ICON.trash} Vaciar carrito</button>`
+            : ""
+        }
+        <span id="save-indicator" class="save-indicator"></span>
+      </div>
+    </div>
+  `;
+}
+
+function renderHistorial() {
+  const sorted = [...sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const totals = sales.reduce(
+    (acc, s) => {
+      acc.barraDatafono += s.barraDatafono || 0;
+      acc.barraEfectivo += s.barraEfectivo || 0;
+      acc.merchDatafono += s.merchDatafono || 0;
+      acc.merchEfectivo += s.merchEfectivo || 0;
+      acc.total += s.total || 0;
+      return acc;
+    },
+    { barraDatafono: 0, barraEfectivo: 0, merchDatafono: 0, merchEfectivo: 0, total: 0 }
+  );
+
+  const rowsHTML = sorted.map((s) => {
+    const expanded = expandedSaleId === s.id;
+    return `
+      <tr class="history-row" onclick="toggleExpand('${s.id}')">
+        <td>${expanded ? ICON.chevronUp : ICON.chevronDown}</td>
+        <td>${new Date(s.timestamp).toLocaleString("es-ES")}</td>
+        <td class="truncate">${s.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}</td>
+        <td><span class="pill ${s.paymentMethod === "Efectivo" ? "pill-cash" : "pill-card"}">${s.paymentMethod}</span></td>
+        <td>${formatMoney(s.total)}</td>
+      </tr>
+      ${
+        expanded
+          ? `<tr class="history-detail-row"><td colspan="5">
+              <div class="detail-grid">
+                ${s.items.map((i) => `<div class="detail-line"><span>${i.qty}× ${i.name}</span><span>${formatMoney(i.subtotal)}</span></div>`).join("")}
+                ${
+                  s.paymentMethod === "Efectivo"
+                    ? `<div class="detail-line dim"><span>Recibido ${formatMoney(s.efectivoRecibido || 0)} · Cambio ${formatMoney(s.cambio || 0)}</span></div>`
+                    : ""
+                }
+              </div>
+            </td></tr>`
+          : ""
+      }
+    `;
+  }).join("");
+
+  return `
+    <div class="historial-view">
+      <div class="summary-cards">
+        <div class="summary-card"><span class="summary-label">Total recaudado</span><span class="summary-value">${formatMoney(totals.total)}</span></div>
+        <div class="summary-card barra"><span class="summary-label">Barra · Datáfono</span><span class="summary-value">${formatMoney(totals.barraDatafono)}</span></div>
+        <div class="summary-card barra"><span class="summary-label">Barra · Efectivo</span><span class="summary-value">${formatMoney(totals.barraEfectivo)}</span></div>
+        <div class="summary-card merch"><span class="summary-label">Merch · Datáfono</span><span class="summary-value">${formatMoney(totals.merchDatafono)}</span></div>
+        <div class="summary-card merch"><span class="summary-label">Merch · Efectivo</span><span class="summary-value">${formatMoney(totals.merchEfectivo)}</span></div>
+      </div>
+
+      <div class="history-actions">
+        <button class="btn-secondary" onclick="exportExcel()">${ICON.download} Exportar Excel</button>
+        <label class="btn-secondary">${ICON.upload} Importar Excel
+          <input type="file" accept=".xlsx,.xls" onchange="handleImport(event)" />
+        </label>
+      </div>
+
+      <div class="history-table-wrap">
+        ${
+          sorted.length === 0
+            ? `<div class="ticket-empty" style="color:var(--text-dim); padding:30px;">Todavía no hay ventas registradas.</div>`
+            : `<table class="history-table">
+                <thead><tr><th></th><th>Hora</th><th>Productos</th><th>Método</th><th>Total</th></tr></thead>
+                <tbody>${rowsHTML}</tbody>
+              </table>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+function renderPrecios() {
+  const row = (cat, p) => `
+    <div class="precio-row">
+      <span>${p.name}</span>
+      <div class="precio-input">
+        <input type="number" step="0.1" id="precio-${cat}-${p.id}" value="${p.price}" />
+        <span>€</span>
+      </div>
+    </div>
+  `;
+  return `
+    <div class="precios-view">
+      <div class="precios-columns">
+        <div class="precios-col">
+          <div class="category-label barra">Barra</div>
+          ${products.barra.map((p) => row("barra", p)).join("")}
+        </div>
+        <div class="precios-col">
+          <div class="category-label merch">Merchandising</div>
+          ${products.merch.map((p) => row("merch", p)).join("")}
+        </div>
+      </div>
+      <button class="btn-pagado save-btn" onclick="handleSavePrecios()">${ICON.save} Guardar precios</button>
+      <div id="saved-msg" class="saved-msg" style="display:none;">Precios actualizados.</div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
